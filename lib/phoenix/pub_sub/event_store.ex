@@ -4,7 +4,6 @@ defmodule Phoenix.PubSub.EventStore do
   """
   @behaviour Phoenix.PubSub.Adapter
   use GenServer
-  require Logger
 
   def start_link(opts) do
     name = opts[:adapter_name]
@@ -22,8 +21,13 @@ defmodule Phoenix.PubSub.EventStore do
   def node_name(nil), do: node()
   def node_name(configured_name), do: configured_name
 
-  def direct_broadcast(_server, _node_name, _topic, _msg, _dispatcher) do
-    {:error, :not_supported}
+  def direct_broadcast(server, node_name, topic, message, dispatcher) do
+    metadata = %{
+      dispatcher: dispatcher,
+      destination_node: node_name
+    }
+
+    publish(server, topic, message, metadata)
   end
 
   def broadcast(server, topic, message, dispatcher) do
@@ -43,7 +47,10 @@ defmodule Phoenix.PubSub.EventStore do
         _from_pid,
         %{id: id, event_store: event_store} = state
       ) do
-    metadata = Map.put(metadata, :source, id)
+    metadata =
+      metadata
+      |> Map.put(:source, id)
+      |> Map.put(:source_node, Node.self())
 
     message = %EventStore.EventData{
       event_type: "Elixir.Phoenix.PubSub.EventStore.Data",
@@ -66,7 +73,6 @@ defmodule Phoenix.PubSub.EventStore do
   end
 
   def handle_info({:events, events}, state) do
-    Logger.debug("EVENTS: #{inspect(events)}")
     Enum.each(events, &local_broadcast_event(&1, state))
 
     {:noreply, state}
@@ -74,6 +80,31 @@ defmodule Phoenix.PubSub.EventStore do
 
   def handle_info({:subscribed, _subscription}, state) do
     {:noreply, state}
+  end
+
+  defp local_broadcast_event(
+         %EventStore.RecordedEvent{
+           data: %Phoenix.PubSub.EventStore.Data{
+             topic: topic,
+             payload: payload
+           },
+           metadata: %{
+             "dispatcher" => dispatcher,
+             "source" => source_id,
+             "destination_node" => destination_node
+           }
+         },
+         %{id: id, name: name} = _state
+       ) do
+    if to_string(Node.self()) == destination_node and
+         id != source_id do
+      Phoenix.PubSub.local_broadcast(
+        name,
+        topic,
+        decode(payload),
+        String.to_existing_atom(dispatcher)
+      )
+    end
   end
 
   defp local_broadcast_event(
