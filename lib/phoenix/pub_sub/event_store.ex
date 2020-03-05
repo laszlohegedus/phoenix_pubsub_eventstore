@@ -55,8 +55,7 @@ defmodule Phoenix.PubSub.EventStore do
     message = %EventStore.EventData{
       event_type: "Elixir.Phoenix.PubSub.EventStore.Data",
       data: %Phoenix.PubSub.EventStore.Data{
-        payload: encode(message),
-        topic: topic
+        payload: encode(message)
       },
       metadata: metadata
     }
@@ -85,14 +84,14 @@ defmodule Phoenix.PubSub.EventStore do
   defp local_broadcast_event(
          %EventStore.RecordedEvent{
            data: %Phoenix.PubSub.EventStore.Data{
-             topic: topic,
              payload: payload
            },
            metadata: %{
              "dispatcher" => dispatcher,
              "source" => source_id,
              "destination_node" => destination_node
-           }
+           },
+           stream_uuid: topic
          },
          %{id: id, name: name} = _state
        ) do
@@ -110,13 +109,13 @@ defmodule Phoenix.PubSub.EventStore do
   defp local_broadcast_event(
          %EventStore.RecordedEvent{
            data: %Phoenix.PubSub.EventStore.Data{
-             topic: topic,
              payload: payload
            },
            metadata: %{
              "dispatcher" => dispatcher,
              "source" => source_id
-           }
+           },
+           stream_uuid: topic
          },
          %{id: id, name: name} = _state
        ) do

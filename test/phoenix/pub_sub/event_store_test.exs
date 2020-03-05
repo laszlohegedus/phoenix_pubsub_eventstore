@@ -16,7 +16,6 @@ defmodule Phoenix.PubSub.EventStoreTest do
       broadcast(@topic, %{hello: :world})
 
       assert_receive %{hello: :world}, 5000
-      Process.sleep(5000)
     end
   end
 
