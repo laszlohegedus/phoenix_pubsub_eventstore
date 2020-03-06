@@ -1,21 +1,35 @@
 defmodule Phoenix.PubSub.EventStore do
   @moduledoc """
-  Doc
+  Phoenix PubSub adapter backed by EventStore.
+
+  An example usage (add this to your supervision tree):
+  ```elixir
+  {Phoenix.PubSub,
+    [name: EventStoreTest.PubSub,
+     adapter: Phoenix.PubSub.EventStore,
+     eventstore: MyApp.EventStore]
+  }
+  ```
+  where `MyApp.EventStore` is configured separately based on the EventStore
+  documentation.
   """
   @behaviour Phoenix.PubSub.Adapter
   use GenServer
 
   def start_link(opts) do
-    name = opts[:adapter_name]
-    GenServer.start_link(__MODULE__, opts, name: name)
+    GenServer.start_link(__MODULE__, opts, name: opts[:adapter_name])
   end
 
   def init(opts) do
-    event_store = opts[:eventstore]
-
     send(self(), :subscribe)
 
-    {:ok, %{id: UUID.uuid1(), event_store: event_store, name: opts[:name]}}
+    {:ok,
+     %{
+       id: UUID.uuid1(),
+       broadcast_name: opts[:name],
+       event_store: opts[:eventstore],
+       serializer: opts[:serializer] || Phoenix.PubSub.EventStore.Serializer.Base64
+     }}
   end
 
   def node_name(nil), do: node()
@@ -23,17 +37,15 @@ defmodule Phoenix.PubSub.EventStore do
 
   def direct_broadcast(server, node_name, topic, message, dispatcher) do
     metadata = %{
-      dispatcher: dispatcher,
-      destination_node: node_name
+      destination_node: to_string(node_name),
+      source_node: to_string(node())
     }
 
-    publish(server, topic, message, metadata)
+    broadcast(server, topic, message, dispatcher, metadata)
   end
 
-  def broadcast(server, topic, message, dispatcher) do
-    metadata = %{
-      dispatcher: dispatcher
-    }
+  def broadcast(server, topic, message, dispatcher, metadata \\ %{}) do
+    metadata = Map.put(metadata, :dispatcher, dispatcher)
 
     publish(server, topic, message, metadata)
   end
@@ -45,19 +57,12 @@ defmodule Phoenix.PubSub.EventStore do
   def handle_call(
         {:publish, topic, message, metadata},
         _from_pid,
-        %{id: id, event_store: event_store} = state
+        %{id: id, event_store: event_store, serializer: serializer} = state
       ) do
-    metadata =
-      metadata
-      |> Map.put(:source, id)
-      |> Map.put(:source_node, Node.self())
-
     message = %EventStore.EventData{
-      event_type: "Elixir.Phoenix.PubSub.EventStore.Data",
-      data: %Phoenix.PubSub.EventStore.Data{
-        payload: encode(message)
-      },
-      metadata: metadata
+      event_type: to_string(serializer),
+      data: serializer.serialize(message),
+      metadata: Map.put(metadata, :source, id)
     }
 
     res = event_store.append_to_stream(topic, :any_version, [message])
@@ -83,61 +88,31 @@ defmodule Phoenix.PubSub.EventStore do
 
   defp local_broadcast_event(
          %EventStore.RecordedEvent{
-           data: %Phoenix.PubSub.EventStore.Data{
-             payload: payload
-           },
-           metadata: %{
-             "dispatcher" => dispatcher,
-             "source" => source_id,
-             "destination_node" => destination_node
-           },
+           data: data,
+           metadata: metadata,
            stream_uuid: topic
          },
-         %{id: id, name: name} = _state
+         %{id: id, serializer: serializer, broadcast_name: broadcast_name} = _state
        ) do
-    if to_string(Node.self()) == destination_node and
-         id != source_id do
-      Phoenix.PubSub.local_broadcast(
-        name,
-        topic,
-        decode(payload),
-        String.to_existing_atom(dispatcher)
-      )
+    current_node = to_string(node())
+
+    case metadata do
+      %{"destination_node" => destination_node} when destination_node != current_node ->
+        :ok
+
+      %{"source" => ^id} ->
+        # This node is the source, nothing to do, because local dispatch already
+        # happened.
+        :ok
+
+      %{"dispatcher" => dispatcher} ->
+        # Otherwise broadcast locally
+        Phoenix.PubSub.local_broadcast(
+          broadcast_name,
+          topic,
+          serializer.deserialize(data),
+          String.to_existing_atom(dispatcher)
+        )
     end
-  end
-
-  defp local_broadcast_event(
-         %EventStore.RecordedEvent{
-           data: %Phoenix.PubSub.EventStore.Data{
-             payload: payload
-           },
-           metadata: %{
-             "dispatcher" => dispatcher,
-             "source" => source_id
-           },
-           stream_uuid: topic
-         },
-         %{id: id, name: name} = _state
-       ) do
-    if id != source_id do
-      Phoenix.PubSub.local_broadcast(
-        name,
-        topic,
-        decode(payload),
-        String.to_existing_atom(dispatcher)
-      )
-    end
-  end
-
-  defp encode(msg) do
-    msg
-    |> :erlang.term_to_binary()
-    |> Base.encode64()
-  end
-
-  defp decode(payload) do
-    payload
-    |> Base.decode64!()
-    |> :erlang.binary_to_term()
   end
 end
