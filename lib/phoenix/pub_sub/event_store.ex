@@ -47,15 +47,11 @@ defmodule Phoenix.PubSub.EventStore do
   def broadcast(server, topic, message, dispatcher, metadata \\ %{}) do
     metadata = Map.put(metadata, :dispatcher, dispatcher)
 
-    publish(server, topic, message, metadata)
-  end
-
-  defp publish(server, topic, message, metadata) do
-    GenServer.call(server, {:publish, topic, message, metadata})
+    GenServer.call(server, {:broadcast, topic, message, metadata})
   end
 
   def handle_call(
-        {:publish, topic, message, metadata},
+        {:broadcast, topic, message, metadata},
         _from_pid,
         %{id: id, event_store: event_store, serializer: serializer} = state
       ) do
