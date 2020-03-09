@@ -4,11 +4,12 @@ defmodule Phoenix.PubSub.EventStore.MixProject do
   def project do
     [
       app: :phoenix_pubsub_eventstore,
-      version: "0.1.0",
+      deps: deps(),
+      description: "Phoenix pubsub over EventStore",
       elixir: "~> 1.9",
-      start_permanent: Mix.env() == :prod,
       elixirc_paths: elixirc_paths(Mix.env()),
-      deps: deps()
+      start_permanent: Mix.env() == :prod,
+      version: "0.1.0"
     ]
   end
 
