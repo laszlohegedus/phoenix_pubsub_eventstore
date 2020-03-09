@@ -5,7 +5,7 @@ defmodule Phoenix.PubSub.EventStore do
   An example usage (add this to your supervision tree):
   ```elixir
   {Phoenix.PubSub,
-    [name: EventStoreTest.PubSub,
+    [name: MyApp.PubSub,
      adapter: Phoenix.PubSub.EventStore,
      eventstore: MyApp.EventStore]
   }
@@ -26,7 +26,7 @@ defmodule Phoenix.PubSub.EventStore do
     {:ok,
      %{
        id: UUID.uuid1(),
-       broadcast_name: opts[:name],
+       pubsub_name: opts[:name],
        event_store: opts[:eventstore],
        serializer: opts[:serializer] || Phoenix.PubSub.EventStore.Serializer.Base64
      }}
@@ -55,13 +55,13 @@ defmodule Phoenix.PubSub.EventStore do
         _from_pid,
         %{id: id, event_store: event_store, serializer: serializer} = state
       ) do
-    message = %EventStore.EventData{
+    event = %EventStore.EventData{
       event_type: to_string(serializer),
       data: serializer.serialize(message),
       metadata: Map.put(metadata, :source, id)
     }
 
-    res = event_store.append_to_stream(topic, :any_version, [message])
+    res = event_store.append_to_stream(topic, :any_version, [event])
 
     {:reply, res, state}
   end
@@ -72,13 +72,13 @@ defmodule Phoenix.PubSub.EventStore do
     {:noreply, state}
   end
 
-  def handle_info({:events, events}, state) do
-    Enum.each(events, &local_broadcast_event(&1, state))
-
+  def handle_info({:subscribed, _subscription}, state) do
     {:noreply, state}
   end
 
-  def handle_info({:subscribed, _subscription}, state) do
+  def handle_info({:events, events}, state) do
+    Enum.each(events, &local_broadcast_event(&1, state))
+
     {:noreply, state}
   end
 
@@ -88,12 +88,13 @@ defmodule Phoenix.PubSub.EventStore do
            metadata: metadata,
            stream_uuid: topic
          },
-         %{id: id, serializer: serializer, broadcast_name: broadcast_name} = _state
+         %{id: id, serializer: serializer, pubsub_name: pubsub_name} = _state
        ) do
     current_node = to_string(node())
 
     case metadata do
       %{"destination_node" => destination_node} when destination_node != current_node ->
+        # Direct broadcast and this is not the destination node.
         :ok
 
       %{"source" => ^id} ->
@@ -104,7 +105,7 @@ defmodule Phoenix.PubSub.EventStore do
       %{"dispatcher" => dispatcher} ->
         # Otherwise broadcast locally
         Phoenix.PubSub.local_broadcast(
-          broadcast_name,
+          pubsub_name,
           topic,
           serializer.deserialize(data),
           String.to_existing_atom(dispatcher)
