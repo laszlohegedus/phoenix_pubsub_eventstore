@@ -9,6 +9,8 @@ defmodule Phoenix.PubSub.EventStore do
   ```
   where `MyApp.EventStore` is configured separately based on the EventStore
   documentation.
+
+  It is recommended to use a dedicated event store for the purpose of pubsub.
   """
   use Supervisor
 

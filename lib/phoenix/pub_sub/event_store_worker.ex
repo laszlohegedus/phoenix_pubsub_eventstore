@@ -1,6 +1,10 @@
 defmodule Phoenix.PubSub.EventStore.Worker do
   @moduledoc """
   Phoenix PubSub adapter backed by EventStore. Worker module.
+
+  This module implements a GenServer that is responsible for publishing
+  messages as events into an event store. It also subscribes to all topics
+  and uses the local pubsub to distribute messages to local subscribers.
   """
   use GenServer
 

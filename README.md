@@ -1,6 +1,6 @@
 # phoenix_pubsub_eventstore
 
-Phoenix pubsub adapter using EventStore.
+Phoenix pubsub adapter using EventStore. It is still work in progress and I do not recommend it to be used in a production environment.
 
 This library can be used to provide Phoenix PubSub over [EventStore](https://hexdocs.pm/eventstore).
 
