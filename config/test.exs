@@ -3,6 +3,7 @@ import Config
 config :phoenix_pubsub_eventstore,
   pubsub: [
     name: EventStoreTest.PubSub,
+    adapter: Phoenix.PubSub.EventStore,
     eventstore: Phoenix.PubSub.EventStoreTest.TestApp.EventStore
   ]
 

@@ -10,7 +10,7 @@ defmodule Phoenix.PubSub.EventStore.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       package: package(),
       start_permanent: Mix.env() == :prod,
-      version: "1.1.0"
+      version: "2.0.0"
     ]
   end
 
@@ -35,7 +35,8 @@ defmodule Phoenix.PubSub.EventStore.MixProject do
       {:eventstore, "~> 1.0"},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:jason, "~> 1.1"},
-      {:phoenix_pubsub, "~> 1.1.2"}
+      {:phoenix_pubsub,
+       github: "phoenixframework/phoenix_pubsub", branch: "master", override: true}
     ]
   end
 end
