@@ -115,8 +115,8 @@ defmodule Phoenix.PubSub.EventStore.Worker do
   defp decode_server(module), do: String.to_existing_atom(module)
 
   defp encode_from_pid(:none), do: "none"
-  defp encode_from_pid(pid), do: Base.encode64(:erlang.term_to_binary(pid))
+  defp encode_from_pid(pid), do: to_string(:erlang.pid_to_list(pid))
 
   defp decode_from_pid("none"), do: :none
-  defp decode_from_pid(pid), do: :erlang.binary_to_term(Base.decode64!(pid))
+  defp decode_from_pid(pid_as_string), do: :erlang.list_to_pid(to_charlist(pid_as_string))
 end

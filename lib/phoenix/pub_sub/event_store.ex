@@ -5,8 +5,7 @@ defmodule Phoenix.PubSub.EventStore do
   An example usage (add this to your supervision tree):
   ```elixir
   {Phoenix.PubSub.EventStore,
-    [name: MyApp.PubSub, eventstore: MyApp.EventStore]
-  }
+    [name: MyApp.PubSub, eventstore: MyApp.EventStore]}
   ```
   where `MyApp.EventStore` is configured separately based on the EventStore
   documentation.

@@ -6,14 +6,16 @@ This library can be used to provide Phoenix PubSub over [EventStore](https://hex
 
 ## Usage
 
-Add `Phoenix.PubSub` to your supervision tree by specifying `Phoenix.PubSub.EventStore` as an adapter and passing your event store in the `:eventstore` option.
+Add `Phoenix.PubSub.EventStore` to your supervision tree specifying your event store in the option `:eventstore`.
 
 ```elixir
-{Phoenix.PubSub,
-  [name: MyApp.PubSub,
-   adapter: Phoenix.PubSub.EventStore,
-   eventstore: MyApp.EventStore]
-}
+{Phoenix.PubSub.EventStore, [name: MyApp.PubSub, eventstore: MyApp.EventStore]}
+```
+
+or
+
+```elixir
+{Phoenix.PubSub.EventStore, MyApp.PubSub, [eventstore: MyApp.EventStore]}
 ```
 
 You should have `MyApp.EventStore` configured separately. Consult the [EventStore](https://hexdocs.pm/eventstore/EventStore.html) documentation for hints. Make sure that `MyApp.EventStore` is started **before** the PubSub.
