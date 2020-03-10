@@ -31,10 +31,11 @@ defmodule Phoenix.PubSub.EventStore.MixProject do
 
   defp deps do
     [
+      {:elixir_uuid, "~> 1.2"},
       {:eventstore, "~> 1.0"},
+      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:jason, "~> 1.1"},
-      {:phoenix_pubsub, "~> 1.1.2"},
-      {:elixir_uuid, "~> 1.2"}
+      {:phoenix_pubsub, "~> 1.1.2"}
     ]
   end
 end
