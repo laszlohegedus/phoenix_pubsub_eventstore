@@ -6,7 +6,7 @@ defmodule Phoenix.PubSub.EventStoreTest.TestApp.Application do
 
     children = [
       Phoenix.PubSub.EventStoreTest.TestApp.EventStore,
-      {Phoenix.PubSub, pubsub_config}
+      {Phoenix.PubSub.EventStore, pubsub_config}
     ]
 
     Supervisor.start_link(children, strategy: :one_for_one)
