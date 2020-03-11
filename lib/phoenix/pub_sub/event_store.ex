@@ -21,6 +21,9 @@ defmodule Phoenix.PubSub.EventStore do
   - `name`: the name of the PubSub
   - `eventstore`: the name of a the EventStore module to be used
   for distributing messages
+  - `serializer`: optional module name for doing the serialization and
+  deserialization of messages.
+  Defaults to `Phoenix.PubSub.EventStore.Serializer.Base64`
   """
   def start_link(opts) do
     start_link(opts[:name], opts)
@@ -33,6 +36,9 @@ defmodule Phoenix.PubSub.EventStore do
   - `opts` is a keyword list containing:
     - `eventstore`: the name of a the EventStore module to be used
     for distributing messages
+    - `serializer`: optional module name for doing the serialization and
+    deserialization of messages.
+    Defaults to `Phoenix.PubSub.EventStore.Serializer.Base64`
   """
   def start_link(name, opts) do
     supervisor_name = Module.concat(name, Supervisor)
