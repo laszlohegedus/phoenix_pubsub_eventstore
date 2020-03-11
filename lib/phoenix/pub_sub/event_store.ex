@@ -10,16 +10,28 @@ defmodule Phoenix.PubSub.EventStore do
      eventstore: MyApp.EventStore]
   }
   ```
-  where `MyApp.EventStore` is configured separately based on the EventStore
+  where `MyApp.EventStore` is configured separately based on the `EventStore`
   documentation.
+
+  An optional `:serializer` can be specified that is used for converting
+  messages into structs that `EventStore` can handle. The default serializer
+  is `Phoenix.PubSub.EventStore.Serializer.Base64`. Any module that implements
+  `serialize/1` and `deserialize/1` may be used as long as they produce data
+  that `EventStore` can handle.
   """
   @behaviour Phoenix.PubSub.Adapter
   use GenServer
 
+  @doc """
+  Start the server
+
+  This function is called by `Phoenix.PubSub`
+  """
   def start_link(opts) do
     GenServer.start_link(__MODULE__, opts, name: opts[:adapter_name])
   end
 
+  @doc false
   def init(opts) do
     send(self(), :subscribe)
 
@@ -32,9 +44,11 @@ defmodule Phoenix.PubSub.EventStore do
      }}
   end
 
+  @doc false
   def node_name(nil), do: node()
   def node_name(configured_name), do: configured_name
 
+  @doc false
   def direct_broadcast(server, node_name, topic, message, dispatcher) do
     metadata = %{
       destination_node: to_string(node_name),
@@ -44,12 +58,14 @@ defmodule Phoenix.PubSub.EventStore do
     broadcast(server, topic, message, dispatcher, metadata)
   end
 
+  @doc false
   def broadcast(server, topic, message, dispatcher, metadata \\ %{}) do
     metadata = Map.put(metadata, :dispatcher, dispatcher)
 
     GenServer.call(server, {:broadcast, topic, message, metadata})
   end
 
+  @doc false
   def handle_call(
         {:broadcast, topic, message, metadata},
         _from_pid,
@@ -66,6 +82,7 @@ defmodule Phoenix.PubSub.EventStore do
     {:reply, res, state}
   end
 
+  @doc false
   def handle_info(:subscribe, %{eventstore: eventstore} = state) do
     eventstore.subscribe("$all")
 
