@@ -5,13 +5,17 @@ defmodule Phoenix.PubSub.EventStore.Worker do
   This module implements a GenServer that is responsible for publishing
   messages as events into an event store. It also subscribes to all topics
   and uses the local pubsub to distribute messages to local subscribers.
+
+  Functions in this module should not be called directly.
   """
   use GenServer
 
+  @doc false
   def start_link(name, opts) do
     GenServer.start_link(__MODULE__, opts, name: name)
   end
 
+  @doc false
   def init(opts) do
     send(self(), :subscribe)
 
@@ -22,9 +26,11 @@ defmodule Phoenix.PubSub.EventStore.Worker do
      }}
   end
 
+  @doc false
   def node_name(nil), do: node()
   def node_name(configured_name), do: configured_name
 
+  @doc false
   def direct_broadcast(fastlane, server, pool_size, node_name, from_pid, topic, message) do
     metadata = %{
       destination_node: to_string(node_name),
@@ -34,6 +40,7 @@ defmodule Phoenix.PubSub.EventStore.Worker do
     broadcast(fastlane, server, pool_size, from_pid, topic, message, metadata)
   end
 
+  @doc false
   def broadcast(fastlane, server, pool_size, from_pid, topic, message, metadata \\ %{}) do
     broadcast_options = %{
       fastlane: fastlane,
@@ -45,6 +52,7 @@ defmodule Phoenix.PubSub.EventStore.Worker do
     GenServer.call(server, {:broadcast, topic, message, metadata, broadcast_options})
   end
 
+  @doc false
   def handle_call(
         {:broadcast, topic, message, metadata, broadcast_options},
         _from_pid,
@@ -61,6 +69,7 @@ defmodule Phoenix.PubSub.EventStore.Worker do
     {:reply, res, state}
   end
 
+  @doc false
   def handle_info(:subscribe, %{eventstore: eventstore} = state) do
     eventstore.subscribe("$all")
 

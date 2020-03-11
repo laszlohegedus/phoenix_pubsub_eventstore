@@ -14,10 +14,26 @@ defmodule Phoenix.PubSub.EventStore do
   """
   use Supervisor
 
+  @doc """
+  Start the supervisor
+
+  `opts` is a keyword list containing:
+  - `name`: the name of the PubSub
+  - `eventstore`: the name of a the EventStore module to be used
+  for distributing messages
+  """
   def start_link(opts) do
     start_link(opts[:name], opts)
   end
 
+  @doc """
+  Start the supervisor
+
+  - `name` is the name of the PubSub
+  - `opts` is a keyword list containing:
+    - `eventstore`: the name of a the EventStore module to be used
+    for distributing messages
+  """
   def start_link(name, opts) do
     supervisor_name = Module.concat(name, Supervisor)
     opts = Keyword.put_new(opts, :name, name)
@@ -25,6 +41,7 @@ defmodule Phoenix.PubSub.EventStore do
     Supervisor.start_link(__MODULE__, opts, name: supervisor_name)
   end
 
+  @doc false
   def init(opts) do
     pub_sub = opts[:name]
     scheduler_count = :erlang.system_info(:schedulers)
@@ -46,6 +63,7 @@ defmodule Phoenix.PubSub.EventStore do
     supervise(children, strategy: :rest_for_one)
   end
 
+  @doc false
   def node_name(nil), do: node()
   def node_name(configured_name), do: configured_name
 end
