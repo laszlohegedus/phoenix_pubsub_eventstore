@@ -10,6 +10,11 @@ defmodule Phoenix.PubSub.EventStore.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       package: package(),
       start_permanent: Mix.env() == :prod,
+      source_url: "https://github.com/laszlohegedus/phoenix_pubsub_eventstore/",
+      docs: [
+        main: "Phoenix.PubSub.EventStore",
+        source_ref: "v1.1"
+      ],
       version: "1.1.1"
     ]
   end
