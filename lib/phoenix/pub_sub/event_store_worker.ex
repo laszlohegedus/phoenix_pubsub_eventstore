@@ -17,7 +17,7 @@ defmodule Phoenix.PubSub.EventStore.Worker do
 
     {:ok,
      %{
-       event_store: opts[:eventstore],
+       eventstore: opts[:eventstore],
        serializer: opts[:serializer] || Phoenix.PubSub.EventStore.Serializer.Base64
      }}
   end
@@ -48,7 +48,7 @@ defmodule Phoenix.PubSub.EventStore.Worker do
   def handle_call(
         {:broadcast, topic, message, metadata, broadcast_options},
         _from_pid,
-        %{event_store: event_store, serializer: serializer} = state
+        %{eventstore: eventstore, serializer: serializer} = state
       ) do
     event = %EventStore.EventData{
       event_type: to_string(serializer),
@@ -56,13 +56,13 @@ defmodule Phoenix.PubSub.EventStore.Worker do
       metadata: Map.put(metadata, :broadcast_options, broadcast_options)
     }
 
-    res = event_store.append_to_stream(topic, :any_version, [event])
+    res = eventstore.append_to_stream(topic, :any_version, [event])
 
     {:reply, res, state}
   end
 
-  def handle_info(:subscribe, %{event_store: event_store} = state) do
-    event_store.subscribe("$all")
+  def handle_info(:subscribe, %{eventstore: eventstore} = state) do
+    eventstore.subscribe("$all")
 
     {:noreply, state}
   end
