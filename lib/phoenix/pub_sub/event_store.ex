@@ -22,6 +22,8 @@ defmodule Phoenix.PubSub.EventStore do
   @behaviour Phoenix.PubSub.Adapter
   use GenServer
 
+  @metadata_fields [:source, :dispatcher, :destination_node, :source_node]
+
   @doc """
   Start the server
 
@@ -109,24 +111,35 @@ defmodule Phoenix.PubSub.EventStore do
        ) do
     current_node = to_string(node())
 
-    case metadata do
-      %{"destination_node" => destination_node} when destination_node != current_node ->
+    case convert_metadata_keys_to_atoms(metadata) do
+      %{destination_node: destination_node}
+      when not is_nil(destination_node) and destination_node != current_node ->
         # Direct broadcast and this is not the destination node.
         :ok
 
-      %{"source" => ^id} ->
+      %{source: ^id} ->
         # This node is the source, nothing to do, because local dispatch already
         # happened.
         :ok
 
-      %{"dispatcher" => dispatcher} ->
+      %{dispatcher: dispatcher} ->
         # Otherwise broadcast locally
         Phoenix.PubSub.local_broadcast(
           pubsub_name,
           topic,
           serializer.deserialize(data),
-          String.to_existing_atom(dispatcher)
+          maybe_convert_to_existing_atom(dispatcher)
         )
     end
   end
+
+  defp convert_metadata_keys_to_atoms(metadata) do
+    @metadata_fields
+    |> Map.new(&{&1, Map.get(metadata, &1, Map.get(metadata, to_string(&1)))})
+  end
+
+  defp maybe_convert_to_existing_atom(string) when is_binary(string),
+    do: String.to_existing_atom(string)
+
+  defp maybe_convert_to_existing_atom(atom) when is_atom(atom), do: atom
 end
