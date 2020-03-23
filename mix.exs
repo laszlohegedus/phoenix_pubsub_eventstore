@@ -39,7 +39,6 @@ defmodule Phoenix.PubSub.EventStore.MixProject do
       {:elixir_uuid, "~> 1.2"},
       {:eventstore, "~> 1.0"},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
-      {:jason, "~> 1.1"},
       {:phoenix_pubsub,
        github: "phoenixframework/phoenix_pubsub", branch: "master", override: true}
     ]

@@ -8,9 +8,7 @@ config :phoenix_pubsub_eventstore,
   ]
 
 config :phoenix_pubsub_eventstore, Phoenix.PubSub.EventStoreTest.TestApp.EventStore,
-  column_data_type: "jsonb",
-  serializer: EventStore.JsonbSerializer,
-  types: EventStore.PostgresTypes,
+  serializer: EventStore.TermSerializer,
   registry: :distributed,
   username: "postgres",
   password: "postgres",
