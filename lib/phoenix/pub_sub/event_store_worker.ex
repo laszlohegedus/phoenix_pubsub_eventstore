@@ -10,6 +10,9 @@ defmodule Phoenix.PubSub.EventStore.Worker do
   """
   use GenServer
 
+  @metadata_fields [:broadcast_options, :destination_node, :source_node]
+  @broadcast_options_fields [:fastlane, :server, :pool_size, :from_pid]
+
   @doc false
   def start_link(name, opts) do
     GenServer.start_link(__MODULE__, opts, name: name)
@@ -96,19 +99,22 @@ defmodule Phoenix.PubSub.EventStore.Worker do
        ) do
     current_node = to_string(node())
 
-    case metadata do
-      %{"destination_node" => destination_node} when destination_node != current_node ->
+    case convert_keys_to_atoms(metadata, @metadata_fields) do
+      %{destination_node: destination_node}
+      when not is_nil(destination_node) and destination_node != current_node ->
         # Direct broadcast and this is not the destination node.
         :ok
 
       %{
-        "broadcast_options" => %{
-          "fastlane" => fastlane,
-          "server" => server,
-          "pool_size" => pool_size,
-          "from_pid" => from_pid
-        }
+        broadcast_options: broadcast_options
       } ->
+        %{
+          fastlane: fastlane,
+          server: server,
+          pool_size: pool_size,
+          from_pid: from_pid
+        } = convert_keys_to_atoms(broadcast_options, @broadcast_options_fields)
+
         # Otherwise broadcast locally
         Phoenix.PubSub.Local.broadcast(
           decode_fastlane(fastlane),
@@ -121,15 +127,25 @@ defmodule Phoenix.PubSub.EventStore.Worker do
     end
   end
 
+  defp convert_keys_to_atoms(metadata, fields) do
+    fields
+    |> Map.new(&{&1, Map.get(metadata, &1, Map.get(metadata, to_string(&1)))})
+  end
+
   defp decode_fastlane(nil), do: nil
-  defp decode_fastlane(module), do: String.to_existing_atom(module)
+  defp decode_fastlane(module), do: maybe_convert_to_existing_atom(module)
 
   defp decode_server(nil), do: nil
-  defp decode_server(module), do: String.to_existing_atom(module)
+  defp decode_server(module), do: maybe_convert_to_existing_atom(module)
 
   defp encode_from_pid(:none), do: "none"
   defp encode_from_pid(pid), do: to_string(:erlang.pid_to_list(pid))
 
   defp decode_from_pid("none"), do: :none
   defp decode_from_pid(pid_as_string), do: :erlang.list_to_pid(to_charlist(pid_as_string))
+
+  defp maybe_convert_to_existing_atom(string) when is_binary(string),
+    do: String.to_existing_atom(string)
+
+  defp maybe_convert_to_existing_atom(atom) when is_atom(atom), do: atom
 end
