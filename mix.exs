@@ -15,7 +15,7 @@ defmodule Phoenix.PubSub.EventStore.MixProject do
         main: "Phoenix.PubSub.EventStore",
         source_ref: "master"
       ],
-      version: "2.0.0"
+      version: "2.0.1"
     ]
   end
 
