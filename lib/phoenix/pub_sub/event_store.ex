@@ -23,7 +23,7 @@ defmodule Phoenix.PubSub.EventStore do
 
   * `unique_id_fn`: function that generates a unique ID to identify each
   instance of the pubsub. It receives one parameter, that is the pubsub's name.
-  If not specified, then a UUID is generated with UUID.uuid4().
+  If not specified, then a UUID is generated with `UUID.uuid4()`.
   """
   @behaviour Phoenix.PubSub.Adapter
   use GenServer
