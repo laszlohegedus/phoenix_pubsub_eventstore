@@ -13,11 +13,17 @@ defmodule Phoenix.PubSub.EventStore do
   where `MyApp.EventStore` is configured separately based on the `EventStore`
   documentation.
 
-  An optional `:serializer` can be specified that is used for converting
-  messages into structs that `EventStore` can handle. The default serializer
-  is `Phoenix.PubSub.EventStore.Serializer.Base64`. Any module that implements
+  Optional parameters:
+
+  * `serializer`: used for converting messages into structs that `EventStore`
+  can handle. The default serializer is
+  `Phoenix.PubSub.EventStore.Serializer.Base64`. Any module that implements
   `serialize/1` and `deserialize/1` may be used as long as they produce data
-  that `EventStore` can handle.
+  that `EventStore` can work with.
+
+  * `unique_id_fn`: function that generates a unique ID to identify each
+  instance of the pubsub. It receives one parameter, that is the pubsub's name.
+  If not specified, then a UUID is generated with UUID.uuid4().
   """
   @behaviour Phoenix.PubSub.Adapter
   use GenServer
@@ -36,14 +42,21 @@ defmodule Phoenix.PubSub.EventStore do
   @doc false
   def init(opts) do
     send(self(), :subscribe)
+    id = generate_unique_id(opts)
 
     {:ok,
      %{
-       id: UUID.uuid1(),
+       id: id,
        pubsub_name: opts[:name],
        eventstore: opts[:eventstore],
        serializer: opts[:serializer] || Phoenix.PubSub.EventStore.Serializer.Base64
      }}
+  end
+
+  defp generate_unique_id(opts) do
+    unique_id_fn = opts[:unique_id_fn] || fn _name -> UUID.uuid4() end
+
+    unique_id_fn.(opts[:name])
   end
 
   @doc false
